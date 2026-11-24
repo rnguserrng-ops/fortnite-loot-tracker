@@ -627,7 +627,7 @@
   'use strict';
 
   var NS = 'http://www.w3.org/2000/svg';
-  var KEY = 'wes-loot-scanner-v4';
+  var KEY = 'wes-loot-scanner-v5';
 
   var POIS = [
     {id:'rubber',    name:'Rubber Resort',        x:352, y:338, count:5},
@@ -699,24 +699,117 @@
   };
   var TIER_LABEL = { regular:'Regular', rare:'Rare', buried:'Buried' };
 
-  var WEAPONS = ['Zoro’s Three Sword Style','A$AP Rocky’s Shock Rocket','Usopp’s Slingshot','Bundlebuss Repeater Rifle','Gilded Dragoon Shotgun','Explosive Cannon Ball'];
-  var CONSUMABLES = [
-    {name:'Nami’s Tangerine', rarity:'epic'},
-    {name:'Meat on a Stick', rarity:'uncommon'},
-    {name:'Shield Potion', rarity:'rare'},
-    {name:'Small Shield Potion', rarity:'uncommon'},
-    {name:'Medkit', rarity:'uncommon'},
-    {name:'Slurp Juice', rarity:'uncommon'},
-    {name:'Chug Splash', rarity:'epic'}
+  /* Live Chapter 7 Season 5 loot pool — per-roll chances read from the game
+     files on patch 43.10 (fndb.gg chest odds). Materials and ammo omitted. */
+  var CHEST_TABLE = [
+    {name:'Small Shield Potion', rarity:'uncommon', w:19},
+    {name:'Shield Potion', rarity:'rare', w:14},
+    {name:'Meat on a Stick', rarity:'uncommon', w:10},
+    {name:'Med Kit', rarity:'uncommon', w:10},
+    {name:'Nami’s Tangerine', rarity:'uncommon', w:10},
+    {name:'Machine SMG', rarity:'uncommon', w:9.4},
+    {name:'Tactical SMG', rarity:'uncommon', w:9.4},
+    {name:'Overdrive Grenade', rarity:'rare', w:7},
+    {name:'Bundlebuss Repeater Rifle', rarity:'uncommon', w:6.6},
+    {name:'Gilded Dragoon Shotgun', rarity:'uncommon', w:6.4},
+    {name:'Explosive Cannon Ball', rarity:'rare', w:6.2},
+    {name:'Usopp’s Slingshot', rarity:'uncommon', w:6.1},
+    {name:'Flint-Knock Pistol', rarity:'uncommon', w:5.9},
+    {name:'Leekcapper', rarity:'epic', w:5.6},
+    {name:'Zoro’s Three Sword Style', rarity:'epic', w:5.6},
+    {name:'Frenzy Auto Shotgun', rarity:'uncommon', w:5.3},
+    {name:'Lever Action Shotgun', rarity:'uncommon', w:5.3},
+    {name:'Sentinel Pump Shotgun', rarity:'uncommon', w:5.3},
+    {name:'Sidearm Pistol', rarity:'uncommon', w:5.3},
+    {name:'Flapjack Rifle', rarity:'uncommon', w:5.3},
+    {name:'Hammer Assault Rifle', rarity:'uncommon', w:5.3},
+    {name:'Slurp Juice', rarity:'epic', w:2.8},
+    {name:'Skyline Deployer', rarity:'rare', w:2.6},
+    {name:'Machine SMG', rarity:'rare', w:2.5},
+    {name:'Tactical SMG', rarity:'rare', w:2.5},
+    {name:'Vault Key', rarity:'rare', w:2},
+    {name:'Bundlebuss Repeater Rifle', rarity:'rare', w:1.8},
+    {name:'Gilded Dragoon Shotgun', rarity:'rare', w:1.7},
+    {name:'Usopp’s Slingshot', rarity:'rare', w:1.6},
+    {name:'Flint-Knock Pistol', rarity:'rare', w:1.6},
+    {name:'Frenzy Auto Shotgun', rarity:'rare', w:1.4},
+    {name:'Lever Action Shotgun', rarity:'rare', w:1.4},
+    {name:'Sentinel Pump Shotgun', rarity:'rare', w:1.4},
+    {name:'Sidearm Pistol', rarity:'rare', w:1.4},
+    {name:'Flapjack Rifle', rarity:'rare', w:1.4},
+    {name:'Hammer Assault Rifle', rarity:'rare', w:1.4},
+    {name:'Chug Jug', rarity:'legendary', w:1.1},
+    {name:'Machine SMG', rarity:'epic', w:0.4},
+    {name:'Tactical SMG', rarity:'epic', w:0.4},
+    {name:'Bundlebuss Repeater Rifle', rarity:'epic', w:0.3},
+    {name:'Gilded Dragoon Shotgun', rarity:'epic', w:0.3},
+    {name:'Usopp’s Slingshot', rarity:'epic', w:0.3},
+    {name:'Flint-Knock Pistol', rarity:'epic', w:0.3},
+    {name:'Frenzy Auto Shotgun', rarity:'epic', w:0.2},
+    {name:'Lever Action Shotgun', rarity:'epic', w:0.2},
+    {name:'Sentinel Pump Shotgun', rarity:'epic', w:0.2},
+    {name:'Sidearm Pistol', rarity:'epic', w:0.2},
+    {name:'Flapjack Rifle', rarity:'epic', w:0.2},
+    {name:'Hammer Assault Rifle', rarity:'epic', w:0.2}
   ];
-  var UTILITY = [
-    {name:'Wanted Poster', rarity:'rare'},
-    {name:'Vault Key', rarity:'legendary'},
-    {name:'Medium Ammo ×30', rarity:'common'},
-    {name:'Heavy Ammo ×12', rarity:'common'},
-    {name:'Shells ×12', rarity:'common'},
-    {name:'Grenade ×2', rarity:'uncommon'},
-    {name:'Shockwave Grenade ×2', rarity:'rare'}
+
+  var RARE_TABLE = [
+    {name:'Shield Potion', rarity:'rare', w:18},
+    {name:'Meat on a Stick', rarity:'uncommon', w:11},
+    {name:'Med Kit', rarity:'uncommon', w:11},
+    {name:'Nami’s Tangerine', rarity:'uncommon', w:11},
+    {name:'Machine SMG', rarity:'epic', w:11},
+    {name:'Tactical SMG', rarity:'epic', w:11},
+    {name:'Slurp Juice', rarity:'epic', w:11},
+    {name:'Overdrive Grenade', rarity:'rare', w:8.6},
+    {name:'Explosive Cannon Ball', rarity:'rare', w:8.1},
+    {name:'Leekcapper', rarity:'epic', w:7.3},
+    {name:'Zoro’s Three Sword Style', rarity:'epic', w:7.3},
+    {name:'Gilded Dragoon Shotgun', rarity:'epic', w:6.2},
+    {name:'Bundlebuss Repeater Rifle', rarity:'epic', w:5.9},
+    {name:'Usopp’s Slingshot', rarity:'epic', w:5.7},
+    {name:'Flint-Knock Pistol', rarity:'epic', w:5.4},
+    {name:'Frenzy Auto Shotgun', rarity:'epic', w:5.1},
+    {name:'Lever Action Shotgun', rarity:'epic', w:5.1},
+    {name:'Sentinel Pump Shotgun', rarity:'epic', w:5.1},
+    {name:'Vault Key', rarity:'rare', w:5},
+    {name:'Flapjack Rifle', rarity:'epic', w:5},
+    {name:'Hammer Assault Rifle', rarity:'epic', w:5},
+    {name:'Sidearm Pistol', rarity:'epic', w:4.9},
+    {name:'Chug Jug', rarity:'legendary', w:4.4},
+    {name:'Machine SMG', rarity:'legendary', w:3.6},
+    {name:'Tactical SMG', rarity:'legendary', w:3.6},
+    {name:'Sidearm Pistol', rarity:'legendary', w:3.4},
+    {name:'Skyline Deployer', rarity:'rare', w:3.3},
+    {name:'Gilded Dragoon Shotgun', rarity:'legendary', w:1.6},
+    {name:'Bundlebuss Repeater Rifle', rarity:'legendary', w:1.5},
+    {name:'Usopp’s Slingshot', rarity:'legendary', w:1.5},
+    {name:'Flint-Knock Pistol', rarity:'legendary', w:1.4},
+    {name:'Frenzy Auto Shotgun', rarity:'legendary', w:1.3},
+    {name:'Lever Action Shotgun', rarity:'legendary', w:1.3},
+    {name:'Sentinel Pump Shotgun', rarity:'legendary', w:1.3},
+    {name:'Flapjack Rifle', rarity:'legendary', w:1.2},
+    {name:'Hammer Assault Rifle', rarity:'legendary', w:1.2}
+  ];
+
+  var SPRITES = [
+    {name:'Halfpeel’d', rarity:'rare', w:14},
+    {name:'Re-Pete', rarity:'rare', w:14},
+    {name:'Barry O’Fish', rarity:'rare', w:14},
+    {name:'Wayfinder', rarity:'rare', w:14},
+    {name:'Chester', rarity:'epic', w:10},
+    {name:'Kelper', rarity:'epic', w:10},
+    {name:'Exmarks', rarity:'epic', w:10},
+    {name:'Lil’ Squibbly', rarity:'epic', w:10},
+    {name:'Squiplash', rarity:'epic', w:5},
+    {name:'Transponder Snail', rarity:'legendary', w:1.3},
+    {name:'Lil’ Flacko', rarity:'legendary', w:1.3},
+    {name:'Lil’ Uzi Vert Jr.', rarity:'legendary', w:1.3},
+    {name:'Sir Oscar the Second', rarity:'legendary', w:1},
+    {name:'Mini Miku', rarity:'mythic', w:0.5},
+    {name:'Zee', rarity:'mythic', w:0.5},
+    {name:'Plundarrgh', rarity:'mythic', w:0.5},
+    {name:'Sweet Dreams', rarity:'mythic', w:0.25}
   ];
 
   var FORESTS = [
@@ -754,37 +847,39 @@
   var frame = $('#mapFrame');
   var tooltip = $('#tooltip');
 
-  function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+  function pickWeighted(table){
+    var total = 0, i;
+    for(i = 0; i < table.length; i++) total += table[i].w;
+    var r = Math.random() * total, acc = 0;
+    for(i = 0; i < table.length; i++){
+      acc += table[i].w;
+      if(r < acc) return table[i];
+    }
+    return table[table.length - 1];
+  }
 
-  function rollRarity(tier){
-    var table;
-    if(tier === 'rare'){
-      table = [['epic',0.40],['legendary',0.42],['mythic',0.18]];
-    } else if(tier === 'buried'){
-      table = [['rare',0.45],['epic',0.40],['legendary',0.15]];
-    } else {
-      table = [['uncommon',0.36],['rare',0.42],['epic',0.17],['legendary',0.05]];
+  function rollFrom(table){
+    var it = pickWeighted(table);
+    return {type:'item', name:it.name, rarity:it.rarity};
+  }
+
+  function rollUnique(table, count){
+    var out = [];
+    for(var guard = 0; out.length < count && guard < 60; guard++){
+      var it = rollFrom(table);
+      var dup = out.some(function(o){ return o.name === it.name && o.rarity === it.rarity; });
+      if(!dup) out.push(it);
     }
-    var r = Math.random(), acc = 0;
-    for(var i = 0; i < table.length; i++){
-      acc += table[i][1];
-      if(r <= acc) return table[i][0];
-    }
-    return table[table.length - 1][0];
+    return out;
   }
 
   function generateLoot(tier){
-    var weapon = {type:'weapon', name:pick(WEAPONS), rarity:rollRarity(tier)};
-    var consPool = tier === 'rare'
-      ? CONSUMABLES.filter(function(c){ return c.rarity === 'rare' || c.rarity === 'epic'; })
-      : CONSUMABLES;
-    var cons = pick(consPool);
-    var util = pick(UTILITY);
-    return [
-      weapon,
-      {type:'consumable', name:cons.name, rarity:cons.rarity},
-      {type:'utility', name:util.name, rarity:util.rarity}
-    ];
+    if(tier === 'buried'){
+      var sp = pickWeighted(SPRITES);
+      return [{type:'sprite', name:sp.name + ' Sprite', rarity:sp.rarity}]
+        .concat(rollUnique(CHEST_TABLE, 2));
+    }
+    return rollUnique(tier === 'rare' ? RARE_TABLE : CHEST_TABLE, 3);
   }
 
   function visible(c){
@@ -925,8 +1020,10 @@
       '<div class="loot-grid">' + slots + '</div>' +
       '<p class="loot-note">' +
         (loot
-          ? 'Simulated loot preview — rescan to roll new contents.'
-          : 'Contents are sealed. Scan to reveal a simulated loot preview.') +
+          ? (c.tier === 'buried'
+              ? 'Buried Chests always contain a Sprite. Rolls use the live Season 5 drop pool (patch 43.10) — not live match data.'
+              : 'Rolled from the live Season 5 chest drop table (patch 43.10) — not live match data.')
+          : 'Contents are sealed. Scan to roll from the real Season 5 chest drop table.') +
       '</p>' +
       '<button class="btn primary scan-btn" id="scanBtn">' + (loot ? 'Rescan Chest' : 'Scan Chest') + '</button>';
 
