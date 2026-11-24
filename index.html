@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Wes Loot Scanner — Battle Royale Match Loot Scanner</title>
+<style>
+  :root{
+    --bg:#070b14;
+    --panel:#0e1626;
+    --panel-2:#131f33;
+    --line:rgba(255,255,255,.08);
+    --text:#e8eefc;
+    --muted:#8595ad;
+    --gold:#ffc94d;
+    --gold-2:#ff9d2e;
+    --blue:#3fa9f5;
+    --purple:#8a6cff;
+    --green:#38d996;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    background:radial-gradient(1100px 620px at 50% -12%,#16233d 0%,#0a1220 45%,#060a13 100%) fixed;
+    color:var(--text);
+    min-height:100vh;
+  }
+  h1,h2,h3,p{margin:0}
+  button{font:inherit}
+
+  .topbar{
+    display:flex;justify-content:space-between;align-items:center;gap:16px;
+    padding:14px 26px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(10,17,31,.92),rgba(10,17,31,.55));
+    backdrop-filter:blur(12px);
+    position:sticky;top:0;z-index:40;
+  }
+  .brand{display:flex;align-items:center;gap:14px}
+  .logo{width:42px;height:42px;filter:drop-shadow(0 4px 14px rgba(255,178,60,.35))}
+  .brand h1{
+    font-size:20px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;font-style:italic;
+    background:linear-gradient(90deg,#ffffff 10%,#ffe3a3 55%,#ffb43a 90%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .brand p{font-size:10px;letter-spacing:.34em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+  .top-actions{display:flex;gap:10px;align-items:center}
+  .season-pill{
+    display:inline-flex;align-items:center;padding:8px 14px;border-radius:999px;
+    font-size:10.5px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;
+    color:#c9b8ff;background:rgba(122,92,255,.12);border:1px solid rgba(150,125,255,.35);
+    white-space:nowrap;
+  }
+
+  .btn{
+    border:0;border-radius:10px;padding:10px 18px;font-weight:800;font-size:12.5px;
+    letter-spacing:.06em;text-transform:uppercase;cursor:pointer;
+    transition:transform .12s ease, box-shadow .12s ease, filter .12s ease;
+  }
+  .btn:active{transform:translateY(1px) scale(.99)}
+  .btn.primary{
+    background:linear-gradient(180deg,#ffd77a,#ffb43a);color:#241300;
+    box-shadow:0 6px 20px rgba(255,170,50,.3);
+  }
+  .btn.primary:hover{filter:brightness(1.06);box-shadow:0 8px 26px rgba(255,170,50,.4)}
+  .btn.ghost{background:rgba(255,255,255,.04);color:var(--text);border:1px solid var(--line)}
+  .btn.ghost:hover{background:rgba(255,255,255,.08)}
+
+  .layout{
+    display:grid;grid-template-columns:minmax(0,1fr) 392px;gap:18px;
+    padding:18px 26px 10px;max-width:1720px;margin:0 auto;align-items:start;
+  }
+
+  .map-panel{min-width:0}
+  .map-frame{
+    position:relative;border-radius:20px;overflow:hidden;border:1px solid var(--line);
+    background:#0d519e;
+    box-shadow:0 26px 70px rgba(3,18,38,.45);
+    aspect-ratio:1/1;max-height:calc(100vh - 118px);
+  }
+  #map{display:block;width:100%;height:100%;user-select:none;touch-action:manipulation}
+
+  .map-hud{position:absolute;bottom:14px;left:14px;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+  .hud-chip{
+    display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;
+    font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#22384d;
+    background:rgba(255,255,255,.92);border:1px solid rgba(16,42,66,.12);
+    box-shadow:0 6px 18px rgba(20,50,80,.15);backdrop-filter:blur(8px);
+  }
+  .swatch{width:13px;height:13px;display:inline-block;flex:none}
+  .swatch.regular{border-radius:50%;background:#f5c542;border:2px solid #7a4a06}
+  .swatch.buried{border-radius:50%;background:#3aa8e6;border:2px solid #0d4d7a}
+  .swatch.rare{width:11px;height:11px;transform:rotate(45deg);background:#f08a2c;border:2px solid #8a3f00;border-radius:2px}
+
+  .map-title{
+    position:absolute;top:14px;left:14px;padding:8px 13px;border-radius:12px;
+    background:rgba(255,255,255,.92);border:1px solid rgba(16,42,66,.12);
+    box-shadow:0 6px 18px rgba(20,50,80,.15);backdrop-filter:blur(8px);pointer-events:none;
+  }
+  .map-title strong{
+    display:block;font-size:12.5px;font-weight:900;letter-spacing:.14em;
+    text-transform:uppercase;color:#1f3446;
+  }
+  .map-title span{
+    display:block;font-size:9px;letter-spacing:.22em;text-transform:uppercase;
+    color:#64809a;margin-top:2px;
+  }
+
+  .map-zoom{position:absolute;top:14px;right:16px;display:flex;flex-direction:column;gap:6px}
+  .zoom-btn{
+    width:36px;height:36px;border-radius:10px;border:1px solid rgba(16,42,66,.14);
+    background:rgba(255,255,255,.92);color:#20374b;font-size:18px;font-weight:700;
+    display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(8px);
+    box-shadow:0 6px 18px rgba(20,50,80,.15);line-height:1;padding:0;
+  }
+  .zoom-btn:hover{background:#ffffff}
+  .zoom-btn:active{transform:scale(.96)}
+
+  .map-tooltip{
+    position:absolute;left:0;top:0;transform:translate(-50%,-130%);
+    background:rgba(5,10,19,.94);border:1px solid rgba(120,160,255,.25);border-radius:8px;
+    padding:6px 11px;font-size:12px;font-weight:600;letter-spacing:.03em;white-space:nowrap;
+    pointer-events:none;opacity:0;transition:opacity .12s ease;
+    box-shadow:0 10px 30px rgba(0,0,0,.5);color:#e9f1ff;
+  }
+  .map-tooltip.show{opacity:1}
+
+  .sidebar{display:flex;flex-direction:column;gap:12px;position:sticky;top:92px;max-height:calc(100vh - 108px);overflow:hidden}
+  .panel{
+    background:linear-gradient(180deg,#121d31,#0d1526);
+    border:1px solid var(--line);border-radius:16px;padding:14px 16px;
+    box-shadow:0 14px 40px rgba(0,0,0,.35);
+  }
+
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 10px}
+  .stat{text-align:center}
+  .stat span{display:block;font-size:22px;font-weight:900;color:#ffd98a;letter-spacing:.03em}
+  .stat small{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+
+  .detail{min-height:266px;display:flex;flex-direction:column;gap:10px}
+  .detail-empty{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+    min-height:236px;text-align:center;color:var(--muted);font-size:13px;line-height:1.6;
+  }
+  .radar{width:64px;height:64px;border-radius:50%;border:2px dashed #2c425f;position:relative;overflow:hidden}
+  .radar::before{
+    content:"";position:absolute;inset:0;border-radius:50%;
+    background:conic-gradient(from 0deg,transparent 0 295deg,rgba(63,169,245,.4) 360deg);
+    animation:spin 3.2s linear infinite;
+  }
+  .radar::after{content:"";position:absolute;inset:14px;border-radius:50%;border:1px solid #223b58}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .detail-head{display:flex;gap:8px}
+  .tier-badge{
+    font-size:9.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;
+    padding:4px 10px;border-radius:999px;
+  }
+  .tier-badge.regular{color:#ffd98a;background:rgba(245,197,66,.14);border:1px solid rgba(245,197,66,.4)}
+  .tier-badge.rare{color:#ffb27a;background:rgba(240,138,44,.14);border:1px solid rgba(240,138,44,.4)}
+  .tier-badge.buried{color:#8fd0ff;background:rgba(58,168,230,.12);border:1px solid rgba(58,168,230,.35)}
+  .status-chip{
+    font-size:9.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;
+    padding:4px 10px;border-radius:999px;color:#c6d3e8;
+    background:rgba(255,255,255,.05);border:1px solid var(--line);
+  }
+  .status-chip.open{color:#7df0bb;background:rgba(47,206,143,.1);border-color:rgba(47,206,143,.35)}
+
+  .detail h2{font-size:17px;font-weight:800;letter-spacing:.02em}
+  .detail h2 .num{color:var(--muted);font-size:13px;font-weight:600}
+  .poi-line{
+    display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);
+    letter-spacing:.06em;text-transform:uppercase;
+  }
+  .pin{width:7px;height:7px;border-radius:50%;background:#ffc94d;box-shadow:0 0 0 3px rgba(255,201,77,.18)}
+
+  .loot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 2px}
+  .loot-slot{
+    background:#0a1322;border:1px solid rgba(255,255,255,.08);border-radius:10px;
+    padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:6px;
+    text-align:center;min-height:92px;justify-content:center;
+  }
+  .loot-slot:not(.locked){border-color:color-mix(in srgb, var(--rar) 45%, transparent)}
+  .loot-icon{
+    width:16px;height:16px;transform:rotate(45deg);border-radius:3px;
+    background:linear-gradient(135deg,var(--rar),color-mix(in srgb,var(--rar) 40%,#000));
+    box-shadow:0 0 12px color-mix(in srgb,var(--rar) 50%,transparent);
+  }
+  .loot-name{font-size:11px;font-weight:700;line-height:1.35;color:#e6eefc}
+  .loot-rar{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--rar);font-weight:800}
+  .loot-slot.locked{border-style:dashed;border-color:#2a3a55}
+  .lock-q{font-size:20px;font-weight:900;color:#ffd98a;animation:shimmer 1.8s ease-in-out infinite}
+  @keyframes shimmer{0%,100%{opacity:.35}50%{opacity:1}}
+  .loot-slot.locked .loot-name{color:#5d6f89}
+  .loot-note{font-size:10.5px;color:#6f8098;line-height:1.5}
+  .scan-btn{width:100%;margin-top:auto}
+
+  .filters{display:flex;flex-direction:column;gap:10px;padding:12px 14px}
+  .filters input,.filters select{
+    width:100%;background:#0a1322;border:1px solid rgba(255,255,255,.09);border-radius:10px;
+    padding:10px 12px;color:var(--text);font-size:12.5px;outline:none;transition:border-color .12s;
+  }
+  .filters input:focus,.filters select:focus{border-color:rgba(122,92,255,.55)}
+  .filters input::placeholder{color:#5c6d87}
+  .seg{display:flex;background:#0a1322;border:1px solid rgba(255,255,255,.09);border-radius:10px;padding:3px;gap:3px}
+  .seg-btn{
+    flex:1;border:0;background:transparent;color:var(--muted);font-size:11px;font-weight:700;
+    letter-spacing:.08em;text-transform:uppercase;padding:7px 4px;border-radius:8px;
+    cursor:pointer;transition:background .12s,color .12s;
+  }
+  .seg-btn:hover{color:#dce7fa}
+  .seg-btn.active{
+    background:linear-gradient(180deg,rgba(122,92,255,.35),rgba(122,92,255,.18));
+    color:#e6ddff;box-shadow:inset 0 0 0 1px rgba(150,125,255,.4);
+  }
+
+  .listpanel{
+    padding:12px 10px 10px;display:flex;flex-direction:column;gap:8px;
+    min-height:190px;flex:1;overflow:hidden;
+  }
+  .list-head{display:flex;justify-content:space-between;align-items:baseline;padding:0 6px}
+  .list-head h3{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted);font-weight:800}
+  .list-head span{font-size:11px;color:var(--muted);font-weight:700}
+  .chest-list{
+    list-style:none;margin:0;padding:0 2px 0 0;overflow-y:auto;flex:1;min-height:120px;
+    display:flex;flex-direction:column;gap:4px;
+  }
+  .chest-list::-webkit-scrollbar{width:7px}
+  .chest-list::-webkit-scrollbar-thumb{background:#233650;border-radius:99px}
+  .row{
+    display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;
+    cursor:pointer;border:1px solid transparent;transition:background .1s;
+  }
+  .row:hover{background:rgba(255,255,255,.045)}
+  .row.selected{background:rgba(122,92,255,.1);border-color:rgba(150,125,255,.3)}
+  .tier-dot{width:10px;height:10px;flex:none}
+  .tier-dot.regular{border-radius:50%;background:#f5c542;border:1px solid #7a4a06;box-shadow:0 0 8px rgba(245,197,66,.45)}
+  .tier-dot.buried{border-radius:50%;background:#3aa8e6;border:1px solid #0d4d7a;box-shadow:0 0 8px rgba(58,168,230,.45)}
+  .tier-dot.rare{width:9px;height:9px;transform:rotate(45deg);background:#f08a2c;border:1px solid #8a3f00;border-radius:2px;box-shadow:0 0 8px rgba(240,138,44,.45)}
+  .row-main{flex:1;min-width:0}
+  .row-main strong{
+    display:block;font-size:12.5px;font-weight:700;color:#e9f0fc;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .row-main small{font-size:10.5px;color:#6f8098;letter-spacing:.02em}
+  .row-state{font-size:13px;color:#3d4f68;font-weight:800}
+  .row-state.on{color:#2fce8f}
+
+  .foot{text-align:center;color:#54647c;font-size:11px;padding:16px 26px 26px;letter-spacing:.02em}
+
+  /* ---- SVG map styles ---- */
+  .chest-marker{cursor:pointer}
+  .chest-marker .hit{pointer-events:all}
+  .chest-marker .glow{fill:rgba(245,197,66,.28);transform-box:fill-box;transform-origin:center}
+  .chest-marker.buried .glow{fill:rgba(58,168,230,.32)}
+  .chest-marker.rare .glow{fill:rgba(240,138,44,.38);animation:pulse 2.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{transform:scale(.85);opacity:.5}50%{transform:scale(1.25);opacity:1}}
+  .chest-marker .ring{fill:none;stroke:transparent;stroke-width:2.5;stroke-dasharray:5 4}
+  .chest-marker.selected .ring{stroke:#7a5cff;stroke-opacity:.95}
+  .chest-marker .badge{stroke-width:1.6;transition:filter .1s}
+  .chest-marker.regular .badge{fill:#f5c542;stroke:#7a4a06}
+  .chest-marker.buried .badge{fill:#3aa8e6;stroke:#0d4d7a}
+  .chest-marker.rare .badge{fill:#f08a2c;stroke:#8a3f00}
+  .chest-marker .badge-diamond{display:none}
+  .chest-marker.rare .badge-circle{display:none}
+  .chest-marker.rare .badge-diamond{display:block}
+  .chest-marker .badge-num{
+    font-size:9.6px;font-weight:800;fill:#1b1405;
+    font-family:"Segoe UI",system-ui,sans-serif;pointer-events:none;
+  }
+  .chest-marker:hover .badge{filter:brightness(1.12)}
+  .chest-marker.scanned{opacity:.5}
+  .chest-marker.scanned .badge{fill:#c8d1d9;stroke:#7d8b97}
+  .chest-marker.scanned .badge-num{fill:#57636d}
+  .chest-marker.scanned .glow{display:none}
+  .chest-marker .check{display:none}
+  .chest-marker.scanned .check{display:block}
+  .chest-marker .check circle{fill:#2fce8f;stroke:#ffffff;stroke-width:1.2}
+  .chest-marker .check path{fill:none;stroke:#0b4a34;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+  .chest-marker.hidden{display:none}
+
+  @media (max-width:1150px){
+    .layout{grid-template-columns:1fr;padding:14px 16px}
+    .sidebar{position:static;max-height:none;order:2}
+    .map-frame{max-height:none}
+    .chest-list{max-height:320px}
+    .topbar{padding:12px 16px}
+    .brand h1{font-size:16px}
+  }
+  @media (max-width:760px){
+    .topbar{flex-wrap:wrap;padding:12px 14px;gap:10px}
+    .brand h1{font-size:16px;white-space:nowrap}
+    .brand p{white-space:nowrap;font-size:9px;letter-spacing:.22em}
+    .top-actions{width:100%;justify-content:flex-end}
+  }
+  @media (max-width:560px){
+    .top-actions .btn{padding:9px 12px;font-size:11px}
+    .stats span{font-size:18px}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 48 48" aria-hidden="true">
+      <defs>
+        <linearGradient id="lgGold" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffe29a"/><stop offset="1" stop-color="#ff9d2e"/>
+        </linearGradient>
+      </defs>
+      <rect x="6" y="14" width="36" height="26" rx="6" fill="url(#lgGold)" stroke="#5b3a00" stroke-width="2"/>
+      <rect x="6" y="14" width="36" height="9" rx="5" fill="#fff3c4" opacity=".7"/>
+      <rect x="20" y="20" width="8" height="9" rx="2" fill="#37230a"/>
+    </svg>
+    <div class="brand-text">
+      <h1>Wes Loot Scanner</h1>
+      <p>Battle Royale Match Loot Scanner</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <span class="season-pill">Chapter 7 · Season 5</span>
+    <button id="scanAllBtn" class="btn primary">Scan All</button>
+    <button id="resetBtn" class="btn ghost">Reset</button>
+  </div>
+</header>
+
+<main class="layout">
+  <section class="map-panel">
+    <div class="map-frame" id="mapFrame">
+      <svg id="map" viewBox="0 0 1000 1000" role="img" aria-label="Fortnite Chapter 7 Season 5 chest map">
+        <defs>
+          <linearGradient id="oceanGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#0e60b4"/><stop offset=".55" stop-color="#0a4f9f"/><stop offset="1" stop-color="#083f85"/>
+          </linearGradient>
+          <linearGradient id="grassGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#85c257"/><stop offset="1" stop-color="#559a37"/>
+          </linearGradient>
+          <linearGradient id="desertGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#e5a052"/><stop offset="1" stop-color="#c97434"/>
+          </linearGradient>
+          <linearGradient id="sandGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#f4e6ba"/><stop offset="1" stop-color="#e2ca8c"/>
+          </linearGradient>
+          <radialGradient id="lagoonGrad" cx="0.5" cy="0.3" r="0.9">
+            <stop offset="0" stop-color="#8ae0f0"/><stop offset="1" stop-color="#37a8cb"/>
+          </radialGradient>
+          <radialGradient id="riftGrad" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0" stop-color="#f2b5ff"/><stop offset="1" stop-color="#8a3fe0"/>
+          </radialGradient>
+          <filter id="foamBlur" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="9"/>
+          </filter>
+          <filter id="islandBlur" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="14"/>
+          </filter>
+          <filter id="deepBlur" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="26"/>
+          </filter>
+          <filter id="cloudBlur" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="3"/>
+          </filter>
+          <path id="islandShape" d="M300 500 C285 480 290 460 310 445 C330 430 360 425 395 418 C425 412 450 400 480 398 C510 396 535 404 560 400 C600 394 640 380 680 385 C715 390 745 400 762 420 C778 440 770 465 782 488 C795 512 815 528 832 552 C855 582 848 605 830 618 C812 630 795 632 788 652 C780 672 792 690 782 708 C772 728 748 742 730 755 C716 765 726 782 706 792 C686 802 660 795 645 805 C628 815 620 832 598 830 C576 828 570 808 552 810 C534 812 530 832 508 834 C486 836 478 818 458 818 C436 818 424 838 402 830 C380 822 382 800 366 786 C350 772 328 768 320 748 C312 728 322 705 308 688 C294 671 268 665 262 642 C256 618 272 600 262 580 C252 560 248 536 260 518 C272 500 288 505 300 500 Z"/>
+          <clipPath id="islandClip"><use href="#islandShape"/></clipPath>
+        </defs>
+
+        <rect width="1000" height="1000" fill="url(#oceanGrad)"/>
+
+        <!-- deep water -->
+        <g filter="url(#deepBlur)" opacity=".55">
+          <ellipse cx="120" cy="150" rx="180" ry="120" fill="#062f68"/>
+          <ellipse cx="910" cy="890" rx="180" ry="120" fill="#062f68"/>
+          <ellipse cx="940" cy="170" rx="130" ry="100" fill="#07356f"/>
+          <ellipse cx="80" cy="840" rx="140" ry="110" fill="#07356f"/>
+        </g>
+
+        <!-- shallow shelf -->
+        <g filter="url(#deepBlur)">
+          <ellipse cx="560" cy="560" rx="340" ry="300" fill="#2fb6d4" opacity=".5"/>
+          <ellipse cx="430" cy="400" rx="190" ry="140" fill="#2fb6d4" opacity=".4"/>
+          <ellipse cx="700" cy="720" rx="230" ry="170" fill="#2fb6d4" opacity=".42"/>
+          <ellipse cx="760" cy="340" rx="130" ry="90" fill="#2fb6d4" opacity=".4"/>
+        </g>
+        <ellipse cx="560" cy="560" rx="305" ry="268" fill="#63d6e8" opacity=".32" filter="url(#islandBlur)"/>
+
+        <!-- waves -->
+        <g stroke="#bfeaf8" fill="none" opacity=".4" stroke-linecap="round">
+          <path d="M120 380 q40 -18 84 -4" stroke-width="2"/>
+          <path d="M880 240 q36 14 70 4" stroke-width="2"/>
+          <path d="M100 690 q44 16 86 2" stroke-width="2"/>
+          <path d="M900 640 q34 -14 66 -2" stroke-width="2"/>
+          <path d="M190 950 q36 12 70 2" stroke-width="2"/>
+          <path d="M760 200 q40 -12 80 -2" stroke-width="2"/>
+          <path d="M60 300 q30 -10 60 0" stroke-width="2"/>
+          <path d="M920 430 q26 -10 52 -2" stroke-width="2"/>
+        </g>
+
+        <!-- clouds -->
+        <g fill="#ffffff" filter="url(#cloudBlur)" opacity=".95">
+          <ellipse cx="96" cy="112" rx="92" ry="26"/>
+          <ellipse cx="158" cy="128" rx="66" ry="18"/>
+          <ellipse cx="58" cy="142" rx="52" ry="15"/>
+          <ellipse cx="214" cy="100" rx="38" ry="11"/>
+          <ellipse cx="902" cy="902" rx="95" ry="26"/>
+          <ellipse cx="842" cy="922" rx="64" ry="17"/>
+          <ellipse cx="962" cy="874" rx="42" ry="13"/>
+        </g>
+
+        <!-- island shadow, foam, beach, land -->
+        <use href="#islandShape" fill="#06305f" opacity=".35" transform="translate(12 18)" filter="url(#islandBlur)"/>
+        <use href="#islandShape" fill="none" stroke="#ffffff" stroke-width="42" opacity=".8" filter="url(#foamBlur)"/>
+        <use href="#islandShape" fill="none" stroke="#ffffff" stroke-width="9" opacity=".95"/>
+        <use href="#islandShape" fill="none" stroke="#f4e6ba" stroke-width="26" stroke-linejoin="round"/>
+        <use href="#islandShape" fill="url(#grassGrad)" stroke="#ffffff" stroke-width="1.5"/>
+
+        <g clip-path="url(#islandClip)">
+          <!-- desert north band -->
+          <path d="M330 470 C360 430 420 402 480 400 C545 398 610 388 668 392 C720 396 758 418 770 452 C780 484 748 505 706 512 C660 520 612 500 566 506 C520 512 486 544 442 540 C396 536 360 512 342 494 C334 486 328 478 330 470 Z" fill="url(#desertGrad)"/>
+          <path d="M700 505 C740 505 782 512 812 548 C830 570 826 596 806 612 C786 628 760 616 746 596 C726 570 700 548 680 528 Z" fill="url(#desertGrad)"/>
+          <ellipse cx="700" cy="430" rx="60" ry="26" fill="#f0b467" opacity=".5"/>
+          <ellipse cx="470" cy="452" rx="55" ry="22" fill="#f0b467" opacity=".4"/>
+          <ellipse cx="790" cy="560" rx="30" ry="18" fill="#f0b467" opacity=".5"/>
+
+          <!-- green patches -->
+          <ellipse cx="620" cy="620" rx="120" ry="70" fill="#4f9234" opacity=".45"/>
+          <ellipse cx="420" cy="600" rx="110" ry="75" fill="#4f9234" opacity=".4"/>
+          <ellipse cx="700" cy="690" rx="80" ry="50" fill="#5aa03c" opacity=".4"/>
+          <ellipse cx="380" cy="700" rx="70" ry="55" fill="#5aa03c" opacity=".4"/>
+          <ellipse cx="520" cy="540" rx="60" ry="40" fill="#6cb044" opacity=".35"/>
+
+          <!-- sand strips -->
+          <path d="M410 782 C470 764 640 762 712 786" fill="none" stroke="url(#sandGrad)" stroke-width="18" stroke-linecap="round"/>
+          <path d="M300 640 C330 620 360 616 392 620" fill="none" stroke="url(#sandGrad)" stroke-width="14" stroke-linecap="round"/>
+          <path d="M700 620 C740 628 770 650 778 676" fill="none" stroke="url(#sandGrad)" stroke-width="14" stroke-linecap="round"/>
+
+          <!-- roads -->
+          <g fill="none" stroke="#d9c08a" stroke-width="6" stroke-linecap="round" opacity=".8">
+            <path d="M540 428 C522 470 502 496 489 520"/>
+            <path d="M489 524 C520 546 560 560 594 576"/>
+            <path d="M489 524 C472 572 472 622 487 666"/>
+            <path d="M487 668 C452 690 416 700 386 706"/>
+            <path d="M487 668 C520 700 556 722 600 737 C640 748 668 742 692 735"/>
+            <path d="M487 668 C502 712 524 756 551 790"/>
+          </g>
+
+          <!-- lagoon + islets -->
+          <path d="M424 736 C470 716 620 716 696 738 C730 750 712 770 672 772 C596 776 470 772 428 760 C410 754 410 743 424 736 Z" fill="url(#lagoonGrad)" stroke="#ffffff" stroke-width="3"/>
+          <ellipse cx="468" cy="750" rx="20" ry="11" fill="#f4e6ba" stroke="#ffffff" stroke-width="3.5"/>
+          <ellipse cx="468" cy="750" rx="13" ry="6.5" fill="#6cb044"/>
+          <ellipse cx="505" cy="762" rx="14" ry="8" fill="#f4e6ba" stroke="#ffffff" stroke-width="3"/>
+          <ellipse cx="505" cy="762" rx="9" ry="4.8" fill="#6cb044"/>
+          <ellipse cx="552" cy="750" rx="17" ry="9" fill="#f4e6ba" stroke="#ffffff" stroke-width="3"/>
+          <ellipse cx="552" cy="750" rx="11" ry="5.4" fill="#6cb044"/>
+          <ellipse cx="612" cy="762" rx="15" ry="8.5" fill="#f4e6ba" stroke="#ffffff" stroke-width="3"/>
+          <ellipse cx="612" cy="762" rx="9.5" ry="5" fill="#6cb044"/>
+          <ellipse cx="660" cy="748" rx="19" ry="10.5" fill="#f4e6ba" stroke="#ffffff" stroke-width="3.5"/>
+          <ellipse cx="660" cy="748" rx="12" ry="6.2" fill="#6cb044"/>
+
+          <!-- crater (Cursed Cavern) -->
+          <g>
+            <circle cx="598" cy="548" r="46" fill="#4b3a24" opacity=".92"/>
+            <circle cx="598" cy="548" r="31" fill="#332816"/>
+            <circle cx="598" cy="548" r="15" fill="#1d160c"/>
+            <path d="M564 528 C580 518 600 514 616 520" stroke="#6f5733" stroke-width="3" fill="none" opacity=".8"/>
+            <path d="M572 576 C590 584 610 582 624 572" stroke="#6f5733" stroke-width="3" fill="none" opacity=".6"/>
+          </g>
+
+          <!-- rift -->
+          <g transform="translate(505 648)">
+            <circle r="46" fill="#b06cff" opacity=".14"/>
+            <circle r="33" fill="#b06cff" opacity=".16"/>
+            <circle r="24" fill="none" stroke="#c58bff" stroke-width="4" opacity=".8"/>
+            <circle r="13" fill="none" stroke="#9a52f0" stroke-width="3" opacity=".9"/>
+            <circle r="5.5" fill="url(#riftGrad)"/>
+          </g>
+
+          <!-- Loguetown gold garden -->
+          <ellipse cx="530" cy="690" rx="15" ry="10" fill="#eccb54" stroke="#ffffff" stroke-width="2"/>
+
+          <!-- town buildings -->
+          <g fill="#f5ecd8" stroke="#8a6a4a" stroke-width=".8">
+            <rect x="474" y="512" width="7" height="5" rx="1"/>
+            <rect x="492" y="516" width="6" height="5" rx="1"/>
+            <rect x="480" y="528" width="7" height="5" rx="1"/>
+            <rect x="470" y="660" width="7" height="5" rx="1"/>
+            <rect x="488" y="656" width="6" height="5" rx="1"/>
+            <rect x="476" y="676" width="7" height="5" rx="1"/>
+            <rect x="498" y="664" width="6" height="5" rx="1"/>
+            <rect x="680" y="728" width="7" height="5" rx="1"/>
+            <rect x="696" y="734" width="6" height="5" rx="1"/>
+            <rect x="686" y="744" width="7" height="5" rx="1"/>
+            <rect x="376" y="700" width="6" height="5" rx="1"/>
+            <rect x="390" y="708" width="6" height="5" rx="1"/>
+          </g>
+          <g fill="#e2573e" stroke="#7c2b1c" stroke-width=".6">
+            <rect x="474" y="509.5" width="7" height="2.5" rx="1"/>
+            <rect x="480" y="525.5" width="7" height="2.5" rx="1"/>
+            <rect x="470" y="657.5" width="7" height="2.5" rx="1"/>
+            <rect x="476" y="673.5" width="7" height="2.5" rx="1"/>
+            <rect x="680" y="725.5" width="7" height="2.5" rx="1"/>
+            <rect x="686" y="741.5" width="7" height="2.5" rx="1"/>
+          </g>
+
+          <!-- docks (Plunder Port) -->
+          <g>
+            <rect x="534" y="790" width="7" height="24" fill="#8a5a2b"/>
+            <rect x="548" y="794" width="7" height="24" fill="#7a4d22"/>
+            <rect x="562" y="790" width="7" height="24" fill="#8a5a2b"/>
+            <rect x="530" y="788" width="42" height="5" rx="2" fill="#a06b35"/>
+          </g>
+
+          <g id="trees" pointer-events="none"></g>
+        </g>
+
+        <!-- islets -->
+        <g>
+          <!-- Rubber Resort (NW) -->
+          <g>
+            <ellipse cx="352" cy="338" rx="66" ry="46" transform="rotate(-12 352 338)" fill="#f4e6ba" stroke="#ffffff" stroke-width="7"/>
+            <ellipse cx="352" cy="336" rx="50" ry="32" transform="rotate(-12 352 336)" fill="#8cc75c"/>
+            <ellipse cx="332" cy="326" rx="20" ry="12" transform="rotate(-12 332 326)" fill="#a4d574" opacity=".8"/>
+            <rect x="344" y="330" width="9" height="6" rx="1" fill="#f5ecd8" stroke="#8a6a4a" stroke-width=".8"/>
+            <rect x="360" y="342" width="8" height="5" rx="1" fill="#f5ecd8" stroke="#8a6a4a" stroke-width=".8"/>
+            <rect x="344" y="327.5" width="9" height="2.5" rx="1" fill="#e2573e"/>
+          </g>
+          <!-- The Chest (small islet) -->
+          <g>
+            <ellipse cx="312" cy="444" rx="38" ry="25" fill="#f4e6ba" stroke="#ffffff" stroke-width="6"/>
+            <ellipse cx="312" cy="443" rx="27" ry="16" fill="#6cb044"/>
+            <rect x="306" y="438" width="10" height="7" rx="1.5" fill="#c98a2e" stroke="#6b4306" stroke-width="1"/>
+          </g>
+          <!-- NE island -->
+          <g>
+            <ellipse cx="678" cy="346" rx="74" ry="49" transform="rotate(8 678 346)" fill="#f4e6ba" stroke="#ffffff" stroke-width="7"/>
+            <ellipse cx="678" cy="344" rx="57" ry="35" transform="rotate(8 678 344)" fill="#7cba52"/>
+            <ellipse cx="700" cy="332" rx="22" ry="13" fill="#93cc66" opacity=".85"/>
+            <rect x="664" y="336" width="9" height="6" rx="1" fill="#f5ecd8" stroke="#8a6a4a" stroke-width=".8"/>
+            <rect x="682" y="344" width="8" height="6" rx="1" fill="#f5ecd8" stroke="#8a6a4a" stroke-width=".8"/>
+            <rect x="664" y="333.5" width="9" height="2.5" rx="1" fill="#e2573e"/>
+            <rect x="682" y="341.5" width="8" height="2.5" rx="1" fill="#4776c9"/>
+          </g>
+          <!-- north far islet -->
+          <ellipse cx="775" cy="298" rx="24" ry="15" fill="#f4e6ba" stroke="#ffffff" stroke-width="5.5"/>
+          <ellipse cx="775" cy="297" rx="16" ry="9" fill="#6cb044"/>
+          <!-- Arlong Park (W) -->
+          <g>
+            <ellipse cx="283" cy="566" rx="50" ry="36" transform="rotate(-20 283 566)" fill="#f4e6ba" stroke="#ffffff" stroke-width="6.5"/>
+            <ellipse cx="283" cy="564" rx="37" ry="24" transform="rotate(-20 283 564)" fill="#7cba52"/>
+            <ellipse cx="270" cy="556" rx="15" ry="9" fill="#93cc66" opacity=".85"/>
+            <rect x="292" y="574" width="46" height="5" rx="2" fill="#b98a52" transform="rotate(14 292 574)" opacity=".9"/>
+          </g>
+          <!-- The $.$. Rocky (E) -->
+          <g>
+            <ellipse cx="780" cy="594" rx="34" ry="23" fill="#f4e6ba" stroke="#ffffff" stroke-width="6"/>
+            <ellipse cx="780" cy="593" rx="24" ry="14" fill="#6cb044"/>
+            <rect x="774" y="586" width="10" height="7" rx="1.5" fill="#e0b23a" stroke="#7a5a10" stroke-width="1"/>
+          </g>
+          <!-- The Salty Skull (E far) -->
+          <g>
+            <ellipse cx="836" cy="492" rx="18" ry="12" fill="#f4e6ba" stroke="#ffffff" stroke-width="4.5"/>
+            <ellipse cx="836" cy="491" rx="11" ry="7" fill="#6cb044"/>
+          </g>
+          <!-- Baratie (SE) -->
+          <g>
+            <ellipse cx="748" cy="800" rx="27" ry="17" fill="#f4e6ba" stroke="#ffffff" stroke-width="5"/>
+            <ellipse cx="748" cy="799" rx="18" ry="10" fill="#6cb044"/>
+            <rect x="744" y="794" width="8" height="5" rx="1" fill="#f5ecd8" stroke="#8a6a4a" stroke-width=".7"/>
+            <rect x="744" y="792" width="8" height="2" rx="1" fill="#4776c9"/>
+          </g>
+          <!-- far SE islet -->
+          <ellipse cx="806" cy="758" rx="16" ry="10" fill="#f4e6ba" stroke="#ffffff" stroke-width="4"/>
+          <ellipse cx="806" cy="757" rx="10" ry="6" fill="#6cb044"/>
+        </g>
+
+        <use href="#islandShape" fill="none" stroke="#ffffff" stroke-width="2" opacity=".8"/>
+        <g id="poiLayer"></g>
+        <g id="chestLayer"></g>
+      </svg>
+
+      <div class="map-title"><strong>Treasure Hunters</strong><span>Chapter 7 · Season 5</span></div>
+      <div class="map-hud">
+        <div class="hud-chip"><span class="swatch regular"></span><span>Regular</span></div>
+        <div class="hud-chip"><span class="swatch rare"></span><span>Rare</span></div>
+        <div class="hud-chip"><span class="swatch buried"></span><span>Buried</span></div>
+      </div>
+      <div class="map-zoom">
+        <button id="zoomIn" class="zoom-btn" aria-label="Zoom in">+</button>
+        <button id="zoomOut" class="zoom-btn" aria-label="Zoom out">−</button>
+        <button id="zoomReset" class="zoom-btn" aria-label="Reset zoom">⟲</button>
+      </div>
+      <div class="map-tooltip" id="tooltip"></div>
+    </div>
+  </section>
+
+  <aside class="sidebar">
+    <div class="stats panel">
+      <div class="stat"><span id="statTotal">0</span><small>Total</small></div>
+      <div class="stat"><span id="statScanned">0</span><small>Scanned</small></div>
+      <div class="stat"><span id="statUnopened">0</span><small>Unopened</small></div>
+    </div>
+
+    <section class="detail panel" id="detail"></section>
+
+    <section class="filters panel">
+      <input id="search" type="search" placeholder="Search chests or POIs" autocomplete="off"/>
+      <select id="poiFilter"><option value="all">All POIs</option></select>
+      <div class="seg" id="statusSeg">
+        <button data-status="all" class="seg-btn active">All</button>
+        <button data-status="unopened" class="seg-btn">Unopened</button>
+        <button data-status="scanned" class="seg-btn">Scanned</button>
+      </div>
+    </section>
+
+    <section class="listpanel panel">
+      <div class="list-head"><h3>Chests</h3><span id="listCount">0 / 0</span></div>
+      <ul id="chestList" class="chest-list"></ul>
+    </section>
+  </aside>
+</main>
+
+<footer class="foot">
+  Fan-made chest map for Fortnite Chapter 7 · Season 5 (Treasure Hunters) &middot; Not affiliated with Epic Games. Map artwork is an original stylized recreation of the live island; chest spots and loot previews are simulated &mdash; scanning never reloads the page and never reads live match data.
+</footer>
+
+<script>
+(function(){
+  'use strict';
+
+  var NS = 'http://www.w3.org/2000/svg';
+  var KEY = 'wes-loot-scanner-v4';
+
+  var POIS = [
+    {id:'rubber',    name:'Rubber Resort',        x:352, y:338, count:5},
+    {id:'chest',     name:'The Chest',            x:312, y:444, count:5},
+    {id:'buggy',     name:'Buggy’s Beachhead',    x:555, y:440, count:5},
+    {id:'lantern',   name:'Lantern Landing',      x:489, y:524, count:5},
+    {id:'arlong',    name:'Arlong Park',          x:283, y:566, count:5},
+    {id:'cursed',    name:'Cursed Cavern',        x:598, y:548, count:5},
+    {id:'rocky',     name:'The $.$. Rocky',       x:780, y:593, count:5},
+    {id:'windmill',  name:'Windmill Village',     x:383, y:706, count:5},
+    {id:'loguetown', name:'Loguetown',            x:487, y:668, count:5},
+    {id:'busybay',   name:'Busy Bay',             x:690, y:735, count:5},
+    {id:'plunder',   name:'Plunder Port',         x:552, y:795, count:5},
+    {id:'baratie',   name:'Baratie',              x:748, y:799, count:3},
+    {id:'tangerine', name:'Nami’s Tangerine Grove', x:468, y:750, count:3},
+    {id:'henry',     name:'Henry',                x:620, y:695, count:3},
+    {id:'giant',     name:'Giant’s Battlefield',  x:545, y:620, count:3},
+    {id:'salty',     name:'The Salty Skull',      x:836, y:491, count:3}
+  ];
+
+  var OFFSETS = [
+    {x:-27, y:-6, tier:'regular'},
+    {x: 27, y:-8, tier:'buried'},
+    {x:-16, y: 22, tier:'rare'},
+    {x: 18, y: 27, tier:'regular'},
+    {x:  0, y: 47, tier:'regular'}
+  ];
+  var OFFSETS_3 = [
+    {x:-20, y:-4, tier:'regular'},
+    {x: 20, y:-5, tier:'buried'},
+    {x:  0, y:24, tier:'rare'}
+  ];
+  var CODE = { regular:'Regular Chest', rare:'Rare Chest', buried:'Buried Chest' };
+
+  function mulberry32(seed){
+    var a = seed;
+    return function(){
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  var rand = mulberry32(20261123);
+
+  var chests = [];
+  var n = 0;
+  POIS.forEach(function(poi){
+    var offsets = poi.count === 3 ? OFFSETS_3 : OFFSETS;
+    offsets.forEach(function(off){
+      n += 1;
+      chests.push({
+        id:'c' + n,
+        n:String(n).padStart(2,'0'),
+        poiId:poi.id,
+        poi:poi.name,
+        tier: off.tier,
+        code: CODE[off.tier],
+        x: Math.round((poi.x + off.x + (rand() - 0.5) * 5) * 10) / 10,
+        y: Math.round((poi.y + off.y + (rand() - 0.5) * 5) * 10) / 10
+      });
+    });
+  });
+  var byId = new Map(chests.map(function(c){ return [c.id, c]; }));
+
+  var RARITY = {
+    common:'#9aa6b5', uncommon:'#4fd15c', rare:'#4a8ff0',
+    epic:'#b45cff', legendary:'#ff9d2e', mythic:'#ffe14d'
+  };
+  var TIER_LABEL = { regular:'Regular', rare:'Rare', buried:'Buried' };
+
+  var WEAPONS = ['Zoro’s Three Sword Style','A$AP Rocky’s Shock Rocket','Usopp’s Slingshot','Bundlebuss Repeater Rifle','Gilded Dragoon Shotgun','Explosive Cannon Ball'];
+  var CONSUMABLES = [
+    {name:'Nami’s Tangerine', rarity:'epic'},
+    {name:'Meat on a Stick', rarity:'uncommon'},
+    {name:'Shield Potion', rarity:'rare'},
+    {name:'Small Shield Potion', rarity:'uncommon'},
+    {name:'Medkit', rarity:'uncommon'},
+    {name:'Slurp Juice', rarity:'uncommon'},
+    {name:'Chug Splash', rarity:'epic'}
+  ];
+  var UTILITY = [
+    {name:'Wanted Poster', rarity:'rare'},
+    {name:'Vault Key', rarity:'legendary'},
+    {name:'Medium Ammo ×30', rarity:'common'},
+    {name:'Heavy Ammo ×12', rarity:'common'},
+    {name:'Shells ×12', rarity:'common'},
+    {name:'Grenade ×2', rarity:'uncommon'},
+    {name:'Shockwave Grenade ×2', rarity:'rare'}
+  ];
+
+  var FORESTS = [
+    [365,480],[420,505],[470,470],[530,500],[610,505],[660,530],[700,570],
+    [560,600],[640,620],[700,660],[430,640],[380,650],[500,700],[560,720],
+    [650,740],[720,700],[340,620],[450,560],[600,660],[510,580]
+  ];
+  var randTrees = mulberry32(777);
+
+  function treePalette(x, y){
+    if(y < 545 && x > 360 && x < 800) return ['#b05a28','#d07a3a'];
+    if(x > 620 && y > 600) return ['#6f8f3f','#a3b45c'];
+    return ['#2f7d3a','#59a94e'];
+  }
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(KEY);
+      if(!raw) return {};
+      var v = JSON.parse(raw);
+      return (v && typeof v === 'object') ? v : {};
+    }catch(e){ return {}; }
+  }
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify(scans)); }catch(e){}
+  }
+
+  var scans = load();
+  var state = { status:'all', poi:'all', q:'' };
+  var selectedId = null;
+  var markerMap = new Map();
+
+  var $ = function(sel){ return document.querySelector(sel); };
+  var mapSvg = $('#map');
+  var frame = $('#mapFrame');
+  var tooltip = $('#tooltip');
+
+  function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function rollRarity(tier){
+    var table;
+    if(tier === 'rare'){
+      table = [['epic',0.40],['legendary',0.42],['mythic',0.18]];
+    } else if(tier === 'buried'){
+      table = [['rare',0.45],['epic',0.40],['legendary',0.15]];
+    } else {
+      table = [['uncommon',0.36],['rare',0.42],['epic',0.17],['legendary',0.05]];
+    }
+    var r = Math.random(), acc = 0;
+    for(var i = 0; i < table.length; i++){
+      acc += table[i][1];
+      if(r <= acc) return table[i][0];
+    }
+    return table[table.length - 1][0];
+  }
+
+  function generateLoot(tier){
+    var weapon = {type:'weapon', name:pick(WEAPONS), rarity:rollRarity(tier)};
+    var consPool = tier === 'rare'
+      ? CONSUMABLES.filter(function(c){ return c.rarity === 'rare' || c.rarity === 'epic'; })
+      : CONSUMABLES;
+    var cons = pick(consPool);
+    var util = pick(UTILITY);
+    return [
+      weapon,
+      {type:'consumable', name:cons.name, rarity:cons.rarity},
+      {type:'utility', name:util.name, rarity:util.rarity}
+    ];
+  }
+
+  function visible(c){
+    if(state.status === 'unopened' && scans[c.id]) return false;
+    if(state.status === 'scanned' && !scans[c.id]) return false;
+    if(state.poi !== 'all' && c.poiId !== state.poi) return false;
+    if(state.q){
+      var hay = (c.code + ' #' + c.n + ' ' + c.poi).toLowerCase();
+      if(hay.indexOf(state.q) === -1) return false;
+    }
+    return true;
+  }
+
+  /* ---------- build map ---------- */
+  var treesGroup = document.getElementById('trees');
+  var treesHtml = '';
+  FORESTS.forEach(function(f){
+    var count = 5 + Math.floor(randTrees() * 4);
+    for(var i = 0; i < count; i++){
+      var ang = randTrees() * Math.PI * 2;
+      var dist = 12 + randTrees() * 36;
+      var x = f[0] + Math.cos(ang) * dist;
+      var y = f[1] + Math.sin(ang) * dist * 0.8;
+      if(Math.hypot(x - 598, y - 548) < 62) continue;
+      if(Math.hypot(x - 505, y - 648) < 66) continue;
+      if(y > 712 && y < 782 && x > 408 && x < 706) continue;
+      if(Math.hypot(x - 489, y - 524) < 46) continue;
+      if(Math.hypot(x - 487, y - 668) < 50) continue;
+      if(Math.hypot(x - 690, y - 735) < 46) continue;
+      if(Math.hypot(x - 552, y - 795) < 32) continue;
+      if(Math.hypot(x - 383, y - 706) < 40) continue;
+      if(Math.hypot(x - 555, y - 440) < 44) continue;
+      var r = 3 + randTrees() * 2.4;
+      var pal = treePalette(x, y);
+      treesHtml += '<g transform="translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ')">' +
+        '<ellipse cx="1.5" cy="4.5" rx="' + (r + 1.6).toFixed(1) + '" ry="' + (r * 0.45).toFixed(1) + '" fill="#2f4d1c" opacity=".18"/>' +
+        '<circle r="' + r.toFixed(1) + '" fill="' + pal[0] + '"/>' +
+        '<circle cx="' + (-r * 0.32).toFixed(1) + '" cy="' + (-r * 0.32).toFixed(1) + '" r="' + (r * 0.62).toFixed(1) + '" fill="' + pal[1] + '"/>' +
+      '</g>';
+    }
+  });
+  treesGroup.innerHTML = treesHtml;
+
+  var chestLayer = document.getElementById('chestLayer');
+  chests.forEach(function(c){
+    var g = document.createElementNS(NS, 'g');
+    g.setAttribute('transform', 'translate(' + c.x + ' ' + c.y + ')');
+    g.setAttribute('class', 'chest-marker ' + c.tier);
+    g.dataset.id = c.id;
+    g.innerHTML =
+      '<circle class="hit" r="16" fill="#000" fill-opacity="0" pointer-events="all"/>' +
+      '<circle class="glow" r="13.5"/>' +
+      '<circle class="ring" r="16"/>' +
+      '<circle class="badge badge-circle" r="11"/>' +
+      '<rect class="badge badge-diamond" x="-8.2" y="-8.2" width="16.4" height="16.4" rx="2" transform="rotate(45)"/>' +
+      '<text class="badge-num" y="0.5" text-anchor="middle" dominant-baseline="middle">' + c.n + '</text>' +
+      '<g class="check"><circle cx="9" cy="-9" r="5"/><path d="M6.9 -9.2 l1.6 1.8 2.7 -3.3"/></g>';
+    g.addEventListener('click', function(){ selectChest(c.id); });
+    g.addEventListener('pointerenter', function(){
+      tooltip.textContent = c.code + ' · ' + c.poi + (scans[c.id] ? ' · Scanned' : '');
+      tooltip.classList.add('show');
+    });
+    g.addEventListener('pointerleave', function(){ tooltip.classList.remove('show'); });
+    markerMap.set(c.id, g);
+    chestLayer.appendChild(g);
+  });
+
+  frame.addEventListener('pointermove', function(e){
+    var r = frame.getBoundingClientRect();
+    tooltip.style.left = (e.clientX - r.left) + 'px';
+    tooltip.style.top = (e.clientY - r.top - 10) + 'px';
+  });
+
+  /* ---------- rendering ---------- */
+  function renderMarkers(){
+    chests.forEach(function(c){
+      var el = markerMap.get(c.id);
+      el.classList.toggle('scanned', !!scans[c.id]);
+      el.classList.toggle('selected', c.id === selectedId);
+      el.classList.toggle('hidden', !visible(c));
+    });
+  }
+
+  function renderStats(){
+    var scanned = chests.filter(function(c){ return !!scans[c.id]; }).length;
+    $('#statTotal').textContent = chests.length;
+    $('#statScanned').textContent = scanned;
+    $('#statUnopened').textContent = chests.length - scanned;
+  }
+
+  function renderList(){
+    var list = $('#chestList');
+    var vis = chests.filter(visible);
+    list.innerHTML = vis.map(function(c){
+      var sc = !!scans[c.id];
+      return '<li class="row' + (c.id === selectedId ? ' selected' : '') + '" data-id="' + c.id + '">' +
+        '<span class="tier-dot ' + c.tier + '"></span>' +
+        '<div class="row-main"><strong>' + c.code + ' #' + c.n + '</strong><small>' + c.poi + '</small></div>' +
+        '<span class="row-state' + (sc ? ' on' : '') + '">' + (sc ? '✓' : '•') + '</span>' +
+      '</li>';
+    }).join('');
+    $('#listCount').textContent = vis.length + ' / ' + chests.length;
+  }
+
+  function renderDetail(){
+    var el = $('#detail');
+    if(!selectedId){
+      el.innerHTML = '<div class="detail-empty"><div class="radar"></div>' +
+        '<p>Select a chest on the map<br/>to scan its contents.</p></div>';
+      return;
+    }
+    var c = byId.get(selectedId);
+    if(!c){
+      el.innerHTML = '<div class="detail-empty"><p>Chest not found.</p></div>';
+      return;
+    }
+    var loot = scans[c.id];
+    var slots = loot
+      ? loot.map(function(item){
+          var col = RARITY[item.rarity] || '#9aa6b5';
+          return '<div class="loot-slot" style="--rar:' + col + '">' +
+            '<span class="loot-icon"></span>' +
+            '<span class="loot-name">' + item.name + '</span>' +
+            '<span class="loot-rar">' + item.rarity + '</span>' +
+          '</div>';
+        }).join('')
+      : '<div class="loot-slot locked"><span class="lock-q">?</span><span class="loot-name">Hidden</span></div>' +
+        '<div class="loot-slot locked"><span class="lock-q">?</span><span class="loot-name">Hidden</span></div>' +
+        '<div class="loot-slot locked"><span class="lock-q">?</span><span class="loot-name">Hidden</span></div>';
+
+    el.innerHTML =
+      '<div class="detail-head">' +
+        '<span class="tier-badge ' + c.tier + '">' + TIER_LABEL[c.tier] + '</span>' +
+        '<span class="status-chip ' + (loot ? 'open' : 'unopened') + '">' + (loot ? 'Scanned' : 'Unopened') + '</span>' +
+      '</div>' +
+      '<h2>' + c.code + ' <span class="num">#' + c.n + '</span></h2>' +
+      '<p class="poi-line"><span class="pin"></span>' + c.poi + '</p>' +
+      '<div class="loot-grid">' + slots + '</div>' +
+      '<p class="loot-note">' +
+        (loot
+          ? 'Simulated loot preview — rescan to roll new contents.'
+          : 'Contents are sealed. Scan to reveal a simulated loot preview.') +
+      '</p>' +
+      '<button class="btn primary scan-btn" id="scanBtn">' + (loot ? 'Rescan Chest' : 'Scan Chest') + '</button>';
+
+    document.getElementById('scanBtn').addEventListener('click', function(){
+      scans[c.id] = generateLoot(c.tier);
+      save();
+      renderAll();
+    });
+  }
+
+  function renderAll(){
+    renderMarkers();
+    renderStats();
+    renderList();
+    renderDetail();
+  }
+
+  function selectChest(id){
+    selectedId = id;
+    renderAll();
+  }
+
+  /* ---------- events ---------- */
+  var poiSelect = $('#poiFilter');
+  POIS.forEach(function(p){
+    var opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.name;
+    poiSelect.appendChild(opt);
+  });
+  poiSelect.addEventListener('change', function(e){
+    state.poi = e.target.value;
+    renderList();
+    renderMarkers();
+  });
+
+  $('#search').addEventListener('input', function(e){
+    state.q = e.target.value.trim().toLowerCase();
+    renderList();
+    renderMarkers();
+  });
+
+  $('#statusSeg').addEventListener('click', function(e){
+    var btn = e.target.closest('.seg-btn');
+    if(!btn) return;
+    state.status = btn.dataset.status;
+    Array.prototype.forEach.call(document.querySelectorAll('.seg-btn'), function(x){
+      x.classList.toggle('active', x === btn);
+    });
+    renderList();
+    renderMarkers();
+  });
+
+  $('#chestList').addEventListener('click', function(e){
+    var row = e.target.closest('.row');
+    if(row) selectChest(row.dataset.id);
+  });
+
+  $('#scanAllBtn').addEventListener('click', function(){
+    chests.forEach(function(c){
+      if(!scans[c.id]) scans[c.id] = generateLoot(c.tier);
+    });
+    save();
+    renderAll();
+  });
+
+  $('#resetBtn').addEventListener('click', function(){
+    if(!confirm('Reset all scanned chests?')) return;
+    Object.keys(scans).forEach(function(k){ delete scans[k]; });
+    save();
+    renderAll();
+  });
+
+  var zoomLevel = 1;
+  function applyZoom(){
+    var size = 1000 / zoomLevel;
+    var off = (1000 - size) / 2;
+    mapSvg.setAttribute('viewBox', off.toFixed(1) + ' ' + off.toFixed(1) + ' ' + size.toFixed(1) + ' ' + size.toFixed(1));
+  }
+  document.getElementById('zoomIn').addEventListener('click', function(){
+    zoomLevel = Math.min(4, zoomLevel * 1.4); applyZoom();
+  });
+  document.getElementById('zoomOut').addEventListener('click', function(){
+    zoomLevel = Math.max(1, zoomLevel / 1.4); applyZoom();
+  });
+  document.getElementById('zoomReset').addEventListener('click', function(){
+    zoomLevel = 1; applyZoom();
+  });
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
